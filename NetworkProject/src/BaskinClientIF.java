@@ -5,4 +5,6 @@ import java.rmi.Remote;
 */
 public interface BaskinClientIF extends Remote {
     // TODO : 메시지를 받아올 메소드?
+	 public String getClientName();
+	 public void receiveMsg(String msg);
 }
