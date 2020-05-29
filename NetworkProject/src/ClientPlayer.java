@@ -22,7 +22,8 @@ public class ClientPlayer {
             server = (BaskinServerIF) Naming.lookup("rmi://" + sServer + "/" + mServName);
             Thread thread = new Thread(new BaskinClientImpl(server, clientName));
             thread.start();
-            //TODO : 쓰레드 종료
+            // TODO : 쓰레드 종료
+
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
