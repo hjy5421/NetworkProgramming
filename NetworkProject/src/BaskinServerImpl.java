@@ -12,7 +12,7 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 	ArrayList<BaskinClientIF> gameList = null; // 게임에 참여중인 client 리스트
 	int turn = 0;
 	int leader = 0; // 방장
-	int state = 0; // 0=시작, 1=게임 진행중, 2=게임 끝
+	int state = 0; // 0=채팅, 1=게임 시작, 2=게임 진행중, 3=게임 끝
 	private static final int MAXPLAYER = 5; // 최대 플레이 인원 5명
 
 	protected BaskinServerImpl() throws RemoteException {
@@ -20,7 +20,9 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 		clientList = new ArrayList<BaskinClientIF>();
 	}
 
-	// 어떤 client 차례인지 알려주는 메소드
+	/*
+	 어떤 client 차례인지 알려주는 메소드 
+	 */
 	public String whoClient(int n) throws RemoteException {
 		String clientName = "";
 		clientName = gameList.get(n).getClientName();
@@ -31,7 +33,9 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 	// 방장이 누구인지 뿌려주기
 	// 게임유저 중 한 명 나가면 arraylist에서 빼기 -> remove 함수 안에서 구현
 
-	// gameList 설정, 방장 설정
+	/*
+	 gameList 설정, 방장 설정
+	 */
 	private void setLeader(String clientName) throws RemoteException {
 		gameList.clear();
 		int n = 0; // Leader 인덱스
@@ -51,8 +55,25 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 		}
 		leader = n;
 	}
-
+	
+	/*
+	 모든 client에게 메세지 전송
+	 */
+	public void sendAll(ArrayList<BaskinClientIF> list, String clientName, String chatInput) throws RemoteException{
+		for(BaskinClientIF client : list) {
+			if(client.getClientName()!=clientName) {
+				client.receiveMsg(clientName+" : "+chatInput);
+			}
+		}
+	}
+	
+	
+	/*
+	 client가 chat입력할 경우 게임 실행되는 메소드
+	 */
 	public void putClient(String clientName, String chatInput) throws RemoteException {
+		sendAll(clientList,clientName,chatInput);
+		/*
 		if (state == 0) {
 			String findClient = gameList.get(turn).getClientName();
 			setLeader(findClient);
@@ -63,6 +84,7 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 			}
 			state = 1;
 		} else if (state == 1) {
+			sendAll(gameList,clientName,chatInput);
 			int check30 = 0;
 			String[] chatNum = chatInput.split(" |,");
 			for (int i = 0; i < chatNum.length; i++) {
@@ -76,32 +98,44 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 				else
 					turn++;
 				state = 2;
+				check30=0;
 			} else {
 				turn++;
 			}
-		} else {
+		} else if(state==2){
 			for (int i = 0; i < gameList.size(); i++) {
 				gameList.get(i).receiveMsg("게임이 끝났습니다.");
 			}
 			state = 0;
 		}
+		*/
+		//leader 정하기
+		
 	}
 
+	/*
+	 클라이언트 리스트에 추가하는 메소드 
+	 */
 	@Override
-	// 클라이언트 리스트에 추가하는 메소드
 	public void addClient(BaskinClientIF client) throws RemoteException {
 		// 최대인원 5명을 초과하였는지?
 		if (clientList.size() == MAXPLAYER) {
 			client.receiveMsg("최대 인원수를 초과하였습니다!.");
 			client.threadStop(); // 쓰레드 종료 호출
-		} else
+		} else {
 			clientList.add(client);
-
+		}
 	}
 
-	// 클라이언트 리스트에서 제거하는 메소드
+	/*
+	 클라이언트 리스트에서 제거하는 메소드
+	 */
 	public void removeClient(BaskinClientIF client) throws RemoteException {
 		clientList.remove(client);
+		for(BaskinClientIF c:gameList) {
+			if(c.getClientName()==client.getClientName())
+				gameList.remove(client);
+		}
 		// TODO: 게임 시작 전 사용자가 나가게 된다면, 다음 방장은 누가?
 	}
 }

@@ -1,8 +1,11 @@
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.Remote;
 
 public class ClientPlayer {
@@ -19,7 +22,7 @@ public class ClientPlayer {
         BaskinServerIF server;
 
         try {
-            server = (BaskinServerIF) Naming.lookup("rmi://" + sServer + "/" + mServName);
+            server = (BaskinServerIF) Naming.lookup("rmi://" + sServer + "/" + mServName); 
             Thread thread = new Thread(new BaskinClientImpl(server, clientName));
             thread.start();
             // TODO : 쓰레드 종료

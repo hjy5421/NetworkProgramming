@@ -12,7 +12,7 @@ public class SSLSocketServer {
 		final KeyManagerFactory kmf;
 		final SSLContext sc;
 
-		final String runRoot = "E:/Network_Project/NetworkProject/bin/"; // root
+		final String runRoot = "C:\\Users\\User\\git\\NetworkProgramming\\NetworkProject\\bin/"; // root
 		// change : your system root
 		int clientCount = 0;
 

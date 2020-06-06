@@ -34,7 +34,8 @@ public class BaskinClientImpl extends UnicastRemoteObject implements Runnable, B
     public void threadStop() {
         this.stop = true;
     }
-
+    
+  
     // TODO : 채팅 send 부분
     public void run() {
         String inputChat = ""; // 입력받은 채팅 메세지
