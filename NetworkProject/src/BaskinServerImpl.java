@@ -21,20 +21,60 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 	}
 
 	/*
-	 어떤 client 차례인지 알려주는 메소드 
+	 현재 차례 client의 name을 알려주는 메소드
 	 */
-	public String whoClient(int n) throws RemoteException {
+	public String whoTurn(int n) throws RemoteException {
 		String clientName = "";
 		clientName = gameList.get(n).getClientName();
 		return clientName;
 	}
-
-	// TODO: addclient하기 전에 clientList size가 5개 다 안 찼는지 검사 ->addclient 함수에서 구현
-	// 방장이 누구인지 뿌려주기
-	// 게임유저 중 한 명 나가면 arraylist에서 빼기 -> remove 함수 안에서 구현
+	
+	/*
+	 leader client의 name을 알려주는 메소드
+	 */
+	public String whoLeader(int n) throws RemoteException{
+		String clientName="";
+		clientName=clientList.get(n).getClientName();
+		return clientName;
+	}
+	
+	/*
+	 client가 존재하는 리스트 알려주는 메소드
+	 */
+	private int inWhichList(String clientName) throws RemoteException{
+		int n=0; //1=in gameList, 2=in clientList
+		for(int i=0;i<gameList.size();i++) {
+			if(gameList.get(i).getClientName()==clientName) {
+				n=1;
+			}
+		}
+		if(n==0) {
+			n=2;
+		}
+		return n;
+	}
+	
+	/*
+	 입력받은 clientName의 인덱스 알려주는 메소드
+	 */
+	private int whoClient(int n,String clientName) throws RemoteException{
+		int idx=0;
+		if(n==1) {
+			for(int i=0;i<gameList.size();i++) {
+				if(gameList.get(i).getClientName()==clientName)
+					idx=i;
+			}
+		}else {
+			for(int i=0;i<clientList.size();i++) {
+				if(clientList.get(i).getClientName()==clientName)
+					idx=i;
+			}
+		}
+		return idx;
+	}
 
 	/*
-	 gameList 설정, 방장 설정
+	 방장부터 시계방향으로 돌아가게 gameList 설정
 	 */
 	private void setLeader(String clientName) throws RemoteException {
 		gameList.clear();
@@ -57,9 +97,9 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 	}
 	
 	/*
-	 모든 client에게 메세지 전송
+	 해당 client 제외한 다른 client에게 메세지 전송
 	 */
-	public void sendAll(ArrayList<BaskinClientIF> list, String clientName, String chatInput) throws RemoteException{
+	public void sendExcept(ArrayList<BaskinClientIF> list, String clientName, String chatInput) throws RemoteException{
 		for(BaskinClientIF client : list) {
 			if(client.getClientName()!=clientName) {
 				client.receiveMsg(clientName+" : "+chatInput);
@@ -67,49 +107,86 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 		}
 	}
 	
+	/*
+	 모든 client에게 메세지 전송
+	 */
+	public void sendAll(ArrayList<BaskinClientIF> list, String msg) throws RemoteException{
+		for(BaskinClientIF client:list) {
+			client.receiveMsg(msg);
+		}
+	}
 	
 	/*
-	 client가 chat입력할 경우 게임 실행되는 메소드
+	 client가 처음 접속했을 때 방상태 알려주는 메세지를 전송 
 	 */
+	public void alertClient(String clientName) throws RemoteException{
+		//방장 알려주고
+		sendAll(clientList,"방장은 "+whoLeader(leader)+"입니다.");
+		
+		//게임중에 입장하면 게임중이라고 알려주고
+		//nullpointer exception날 것도 같음
+		int whichlist=inWhichList(clientName);
+		int idx=whoClient(whichlist,clientName);
+		if(whichlist==2) {
+			if(state==2) {
+				clientList.get(idx).receiveMsg("게임이 진행중입니다.");
+			}
+		}
+	}
+	
+	/*
+	 채팅, 게임진행 함수
+	 */
+	//TODO: leader로 설정된 사람이 게임이 끝나고 나가면...->arrayList니까 해결될듯?
 	public void putClient(String clientName, String chatInput) throws RemoteException {
-		sendAll(clientList,clientName,chatInput);
-		/*
-		if (state == 0) {
-			String findClient = gameList.get(turn).getClientName();
-			setLeader(findClient);
-			if (chatInput.equals("start")) {
-				for (int i = 0; i < gameList.size(); i++) {
-					gameList.get(i).receiveMsg("게임이 시작되었습니다."); // TODO: client의 run()에서 게임이 시작되었습니다 치면 입력하도록 할 것
-				}
+		if(state==0) { //채팅 
+			if(clientName==whoLeader(leader)) {
+				if(chatInput=="start") 
+					state=1;
 			}
-			state = 1;
-		} else if (state == 1) {
-			sendAll(gameList,clientName,chatInput);
-			int check30 = 0;
-			String[] chatNum = chatInput.split(" |,");
-			for (int i = 0; i < chatNum.length; i++) {
-				if (chatNum[i].equals("30")) {
-					check30 = 1;
+			else {
+				sendExcept(clientList,clientName,chatInput);
+			}	
+		}else if(state==1) { //게임 시작
+			setLeader(whoLeader(leader));
+			// TODO: client의 run()에서 게임이 시작되었습니다 치면 입력하도록 할 것
+			sendAll(clientList, "게임이 시작되었습니다.");
+			state=2;
+		}else if(state==2) { //게임 진행
+			if(clientName==whoTurn(turn)) {
+				sendExcept(gameList,clientName,chatInput);
+				int check30 = 0;
+				//TODO: 문자열 토큰 기준으로 제대로 나눠지는지 확인해서 수정
+				String[] chatNum = chatInput.split(" |,");
+				for (int i = 0; i < chatNum.length; i++) {
+					if (chatNum[i].equals("30")) {
+						check30 = 1;
+					}
 				}
-			}
-			if (check30 == 1) {
-				if (turn == gameList.size() - 1) // 리스트 가장 마지막 사람이 30을 말했을 경우
-					turn = 0;
-				else
+				if (check30 == 1) {
+					if (turn == gameList.size() - 1) // 리스트 가장 마지막 사람이 30을 말했을 경우
+						leader = 0;
+					else
+						leader=++turn;
+					state = 3;
+					check30=0;
+				} else {
 					turn++;
-				state = 2;
-				check30=0;
-			} else {
-				turn++;
+				}
+			}else { //차례가 아닌 client가 입력했을 때
+				int whichlist=inWhichList(clientName);
+				int idx=whoClient(whichlist,clientName);
+				if(whichlist==1) {
+					gameList.get(idx).receiveMsg("본인 차례가 아닙니다.");
+				}else {
+					clientList.get(idx).receiveMsg("게임이 진행중입니다.");
+				}
 			}
-		} else if(state==2){
-			for (int i = 0; i < gameList.size(); i++) {
-				gameList.get(i).receiveMsg("게임이 끝났습니다.");
-			}
+			
+		}else { //게임 종료
+			sendAll(clientList,"게임이 끝났습니다.");
 			state = 0;
 		}
-		*/
-		//leader 정하기
 		
 	}
 
@@ -124,6 +201,7 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 			client.threadStop(); // 쓰레드 종료 호출
 		} else {
 			clientList.add(client);
+			sendExcept(clientList,client.getClientName(),client.getClientName()+"님이 입장하였습니다.");
 		}
 	}
 
@@ -131,11 +209,11 @@ public class BaskinServerImpl extends UnicastRemoteObject implements BaskinServe
 	 클라이언트 리스트에서 제거하는 메소드
 	 */
 	public void removeClient(BaskinClientIF client) throws RemoteException {
+		sendExcept(clientList,client.getClientName(),client.getClientName()+"님이 퇴장하였습니다.");
 		clientList.remove(client);
 		for(BaskinClientIF c:gameList) {
 			if(c.getClientName()==client.getClientName())
 				gameList.remove(client);
 		}
-		// TODO: 게임 시작 전 사용자가 나가게 된다면, 다음 방장은 누가?
 	}
 }
