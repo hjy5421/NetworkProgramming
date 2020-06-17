@@ -6,7 +6,6 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.lang.Thread.State;
 import javax.net.ssl.*;
-import java.util.concurrent.TimeUnit;
 
 public class SSLSocketClient {
 
@@ -22,13 +21,13 @@ public class SSLSocketClient {
 		String clientName = ""; // client name
 
 		if (args.length != 4) {
-			System.out.println("Usage: Classname SSLServerName securePort rmiServerName clientName");
-			// java SSLSocketClient localhost 8888 bk LEE
+			System.out.println("Usage: Classname SSLServerName rmiServerName securePort  clientName");
+			// java SSLSocketClient localhost bk 8888 LEE
 			System.exit(1);
 		}
 		sServer = args[0];
-		sPort = Integer.parseInt(args[1]);
-		mServName = args[2];
+		sPort = Integer.parseInt(args[2]);
+		mServName = args[1];
 		clientName = args[3];
 
 		try {
@@ -43,7 +42,7 @@ public class SSLSocketClient {
 			c.setEnabledCipherSuites(supported);
 			printSocketInfo(c);
 			c.startHandshake();
-			
+
 			System.out.println("--------------------------");
 			System.out.println("방을 개설했습니다");
 		} catch (IOException io) {

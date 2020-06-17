@@ -34,26 +34,29 @@ public class BaskinClientImpl extends UnicastRemoteObject implements Runnable, B
     public void threadStop() {
         this.stop = true;
     }
-    
-  
+
     // TODO : 채팅 send 부분
     public void run() {
-        String inputChat = ""; // 입력받은 채팅 메세지
+        String chatInput = ""; // 입력받은 채팅 메세지
         try {
-            // while (true) { // 최대 인원수 초과 시
-            // if (stop)
-            // break;
-
-            // inputChat = scan.nextLine(); // 메세지 입력
-            // // TODO : 숫자만 입력 받을 경우. 자유롭게 채팅 가능하게 할것인지?
-            // if (inputChat.equalsIgnoreCase("exit")) {
-            // // TODO : sever.remove 함수 호출하여 정상적으로 종료할 것
-            // break;
-            // }
-            // }
-            server.putClient(clientName, "ok");
             System.out.println("성공적으로 연결되었습니다.");
             System.out.println("Player 이름  : " + this.clientName);
+            System.out.println("==========================================================");
+            System.out.println("게임 명 : 베스킨~ 라빈스~ 31~!\n 방의 리더가 \"start\" 를 입력시 게임이 시작됩니다.");
+            System.out.println("!leader -> 현재 리더 알려준답니다 ^^");
+            System.out.println("==========================================================");
+            while (true) {
+                chatInput = scan.nextLine(); // 메세지 입력
+                if (chatInput.equalsIgnoreCase("exit")) {
+                    // TODO : sever.remove 함수 호출하여 정상적으로 종료할 것
+
+                    System.out.println("방에서 나갑니다.");
+                    server.removeClient(this);
+                    System.exit(1);
+                    break;
+                }
+                server.putClient(clientName, chatInput, this);
+            }
         } catch (RemoteException e) {
             e.printStackTrace();
         }

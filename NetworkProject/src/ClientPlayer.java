@@ -1,4 +1,5 @@
 import java.io.*;
+import java.lang.Thread.State;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.rmi.Naming;
@@ -22,10 +23,13 @@ public class ClientPlayer {
         BaskinServerIF server;
 
         try {
-            server = (BaskinServerIF) Naming.lookup("rmi://" + sServer + "/" + mServName); 
+            server = (BaskinServerIF) Naming.lookup("rmi://" + sServer + "/" + mServName);
             Thread thread = new Thread(new BaskinClientImpl(server, clientName));
             thread.start();
             // TODO : 쓰레드 종료
+            if (thread.getState() == State.TERMINATED) {
+                System.exit(1);
+            }
 
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
